@@ -1,0 +1,6 @@
+{
+  "name": "Gerenciador de Contatos e QR Codes",
+  "description": "Sistema para gerenciar contatos corporativos e baixar QR Codes estáticos em vCard 3.0 para cada um deles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
