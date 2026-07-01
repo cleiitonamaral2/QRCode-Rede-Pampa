@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, User, Phone, Smartphone, Mail, Globe, MapPin, Building, Briefcase } from "lucide-react";
-import { Contact, ContactFormData, ContactPreset } from "../types";
+import { X, Sparkles, Phone, Smartphone, Mail, Globe, MapPin, Building, Briefcase, Settings } from "lucide-react";
+import { ContactPreset } from "../types";
 
-interface ContactModalProps {
+interface PresetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: ContactFormData) => Promise<void>;
-  contact?: Contact | null;
-  defaultPreset?: ContactPreset | null;
+  onSave: (preset: ContactPreset) => Promise<void>;
+  currentPreset: ContactPreset | null;
 }
 
-const initialFormState: ContactFormData = {
-  name: "",
+const initialPresetState: ContactPreset = {
   phone: "",
   mobile: "",
   email: "",
@@ -22,59 +20,31 @@ const initialFormState: ContactFormData = {
   role: ""
 };
 
-export default function ContactModal({ isOpen, onClose, onSave, contact, defaultPreset }: ContactModalProps) {
-  const [formData, setFormData] = useState<ContactFormData>(initialFormState);
-  const [errors, setErrors] = useState<{ name?: string }>({});
+export default function PresetModal({ isOpen, onClose, onSave, currentPreset }: PresetModalProps) {
+  const [presetData, setPresetData] = useState<ContactPreset>(initialPresetState);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    if (contact) {
-      setFormData({
-        name: contact.name,
-        phone: contact.phone,
-        mobile: contact.mobile,
-        email: contact.email,
-        website: contact.website,
-        address: contact.address,
-        company: contact.company,
-        role: contact.role
-      });
+    if (currentPreset) {
+      setPresetData(currentPreset);
     } else {
-      setFormData({
-        name: "",
-        phone: defaultPreset?.phone || "",
-        mobile: defaultPreset?.mobile || "",
-        email: defaultPreset?.email || "",
-        website: defaultPreset?.website || "",
-        address: defaultPreset?.address || "",
-        company: defaultPreset?.company || "",
-        role: defaultPreset?.role || ""
-      });
+      setPresetData(initialPresetState);
     }
-    setErrors({});
-  }, [contact, isOpen, defaultPreset]);
+  }, [currentPreset, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (name === "name" && value.trim()) {
-      setErrors((prev) => ({ ...prev, name: undefined }));
-    }
+    setPresetData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      setErrors({ name: "O nome completo é obrigatório." });
-      return;
-    }
-
     try {
       setIsSubmitting(true);
-      await onSave(formData);
+      await onSave(presetData);
       onClose();
     } catch (err) {
-      console.error("Erro ao salvar contato:", err);
+      console.error("Erro ao salvar presets padrão:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -103,13 +73,18 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
-              <div>
-                <h2 className="text-xl font-bold text-stone-900 tracking-tight">
-                  {contact ? "Editar Contato" : "Novo Contato"}
-                </h2>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  {contact ? "Atualize as informações do contato corporativo." : "Insira as informações para gerar o vCard e QR Code correspondentes."}
-                </p>
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-slate-100 text-slate-800 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-stone-900 tracking-tight">
+                    Valores Padrão de Pré-preenchimento
+                  </h2>
+                  <p className="text-xs text-stone-500 mt-0.5">
+                    Defina dados recorrentes (ex: site, endereço, empresa) para preencher automaticamente novos contatos.
+                  </p>
+                </div>
               </div>
               <button
                 onClick={onClose}
@@ -121,37 +96,16 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Seção 1: Identificação */}
+              
+              {/* Seção 1: Organização padrão */}
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3.5">
-                  Dados Principais
+                  Organização & Cargo Padrão
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Nome Completo <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Ex: Carlos de Oliveira Santos"
-                        className={`w-full pl-10 pr-4 py-2.5 bg-stone-50 border ${errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-stone-200 focus:border-stone-500 focus:ring-stone-500"} rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-0`}
-                      />
-                    </div>
-                    {errors.name && (
-                      <p className="text-xs text-red-500 mt-1 font-medium">{errors.name}</p>
-                    )}
-                  </div>
-
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Empresa
+                      Nome da Empresa Padrão
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -160,9 +114,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       <input
                         type="text"
                         name="company"
-                        value={formData.company}
+                        value={presetData.company}
                         onChange={handleChange}
-                        placeholder="Ex: AgencyCorp Digital"
+                        placeholder="Ex: Minha Empresa Ltda"
                         className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                       />
                     </div>
@@ -170,7 +124,7 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Cargo
+                      Cargo / Função Padrão
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -179,9 +133,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       <input
                         type="text"
                         name="role"
-                        value={formData.role}
+                        value={presetData.role}
                         onChange={handleChange}
-                        placeholder="Ex: Diretor Executivo"
+                        placeholder="Ex: Consultor"
                         className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                       />
                     </div>
@@ -189,15 +143,15 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                 </div>
               </div>
 
-              {/* Seção 2: Contatos e Links */}
+              {/* Seção 2: Contatos padrões */}
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3.5">
-                  Canais de Contato
+                  Canais de Contato Padrão
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Celular (WhatsApp)
+                      Celular / WhatsApp Corporativo
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -206,9 +160,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       <input
                         type="text"
                         name="mobile"
-                        value={formData.mobile}
+                        value={presetData.mobile}
                         onChange={handleChange}
-                        placeholder="Ex: (11) 98765-4321"
+                        placeholder="Ex: (11) 99999-8888"
                         className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                       />
                     </div>
@@ -216,7 +170,7 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Telefone Fixo
+                      Telefone Fixo Padrão
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -225,9 +179,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       <input
                         type="text"
                         name="phone"
-                        value={formData.phone}
+                        value={presetData.phone}
                         onChange={handleChange}
-                        placeholder="Ex: (11) 3214-5555"
+                        placeholder="Ex: (11) 3300-4400"
                         className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                       />
                     </div>
@@ -235,7 +189,7 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      E-mail Corporativo
+                      E-mail Padrão (Ex: geral/contato)
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -244,9 +198,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       <input
                         type="email"
                         name="email"
-                        value={formData.email}
+                        value={presetData.email}
                         onChange={handleChange}
-                        placeholder="Ex: carlos@empresa.com"
+                        placeholder="Ex: contato@minhaempresa.com"
                         className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                       />
                     </div>
@@ -254,7 +208,7 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Website (URL)
+                      Website URL Padrão
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -263,9 +217,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       <input
                         type="text"
                         name="website"
-                        value={formData.website}
+                        value={presetData.website}
                         onChange={handleChange}
-                        placeholder="Ex: www.empresa.com"
+                        placeholder="Ex: www.minhaempresa.com"
                         className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                       />
                     </div>
@@ -273,14 +227,14 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                 </div>
               </div>
 
-              {/* Seção 3: Endereço */}
+              {/* Seção 3: Localização padrão */}
               <div>
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3.5">
-                  Localização
+                  Endereço Físico Padrão
                 </h3>
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Endereço Completo
+                    Endereço Completo Corporativo
                   </label>
                   <div className="relative">
                     <div className="absolute top-3 left-3 pointer-events-none text-stone-400">
@@ -288,7 +242,7 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                     </div>
                     <textarea
                       name="address"
-                      value={formData.address}
+                      value={presetData.address}
                       onChange={handleChange}
                       rows={3}
                       placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100"
@@ -312,9 +266,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="px-5 py-2 bg-stone-900 hover:bg-stone-800 disabled:bg-stone-400 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
-                {isSubmitting ? "Gravando..." : "Salvar Contato"}
+                {isSubmitting ? "Gravando..." : "Salvar Padrões"}
               </button>
             </div>
           </motion.div>

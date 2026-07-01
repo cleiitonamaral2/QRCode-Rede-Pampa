@@ -18,6 +18,51 @@ interface Contact {
 const app = express();
 const PORT = 3000;
 const CONTACTS_FILE = path.join(process.cwd(), "contacts.json");
+const PRESETS_FILE = path.join(process.cwd(), "presets.json");
+
+interface ContactPreset {
+  phone: string;
+  mobile: string;
+  email: string;
+  website: string;
+  address: string;
+  company: string;
+  role: string;
+}
+
+const defaultPreset: ContactPreset = {
+  phone: "",
+  mobile: "",
+  email: "",
+  website: "",
+  address: "",
+  company: "",
+  role: ""
+};
+
+// Load presets from file
+function loadPreset(): ContactPreset {
+  try {
+    if (!fs.existsSync(PRESETS_FILE)) {
+      fs.writeFileSync(PRESETS_FILE, JSON.stringify(defaultPreset, null, 2), "utf-8");
+      return defaultPreset;
+    }
+    const data = fs.readFileSync(PRESETS_FILE, "utf-8");
+    return JSON.parse(data);
+  } catch (err) {
+    console.error("Erro ao ler arquivo de presets:", err);
+    return defaultPreset;
+  }
+}
+
+// Save presets to file
+function savePreset(preset: ContactPreset) {
+  try {
+    fs.writeFileSync(PRESETS_FILE, JSON.stringify(preset, null, 2), "utf-8");
+  } catch (err) {
+    console.error("Erro ao salvar arquivo de presets:", err);
+  }
+}
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -82,6 +127,31 @@ function saveContacts(contacts: Contact[]) {
 }
 
 // API Routes
+
+// 0. Get and Update Settings Presets for pre-filling
+app.get("/api/presets", (req, res) => {
+  const preset = loadPreset();
+  res.json(preset);
+});
+
+app.post("/api/presets", (req, res) => {
+  try {
+    const { phone, mobile, email, website, address, company, role } = req.body;
+    const updatedPreset = {
+      phone: phone || "",
+      mobile: mobile || "",
+      email: email || "",
+      website: website || "",
+      address: address || "",
+      company: company || "",
+      role: role || ""
+    };
+    savePreset(updatedPreset);
+    res.json(updatedPreset);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao salvar as configurações de pré-preenchimento." });
+  }
+});
 
 // 1. List all contacts
 app.get("/api/contacts", (req, res) => {

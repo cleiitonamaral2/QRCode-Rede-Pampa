@@ -5,8 +5,9 @@ import {
   CheckCircle2, AlertCircle, RefreshCw, Edit2, Trash2, Download,
   Smartphone, Mail, Globe, MapPin, Briefcase
 } from "lucide-react";
-import { Contact, ContactFormData } from "./types";
+import { Contact, ContactFormData, ContactPreset } from "./types";
 import ContactModal from "./components/ContactModal";
+import PresetModal from "./components/PresetModal";
 import { generateVCardString } from "./utils/vcard";
 import QRCode from "qrcode";
 
@@ -24,6 +25,10 @@ export default function App() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+
+  // Preset Template State
+  const [preset, setPreset] = useState<ContactPreset | null>(null);
+  const [isPresetModalOpen, setIsPresetModalOpen] = useState<boolean>(false);
 
   // Success Notification Toast State
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -46,9 +51,41 @@ export default function App() {
     }
   };
 
+  // Fetch presets on mount
+  const fetchPreset = async () => {
+    try {
+      const res = await fetch("/api/presets");
+      if (res.ok) {
+        const data = await res.json();
+        setPreset(data);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar presets:", err);
+    }
+  };
+
   useEffect(() => {
     fetchContacts();
+    fetchPreset();
   }, []);
+
+  // Save preset template handler
+  const handleSavePreset = async (presetData: ContactPreset) => {
+    try {
+      const res = await fetch("/api/presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(presetData)
+      });
+      if (!res.ok) throw new Error("Erro ao salvar padrões.");
+      const updated = await res.json();
+      setPreset(updated);
+      showToast("Padrões de pré-preenchimento atualizados!");
+    } catch (err: any) {
+      showToast(err.message || "Erro de conexão com o servidor.");
+      throw err;
+    }
+  };
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -178,6 +215,15 @@ export default function App() {
                 <Users className="w-4 h-4 text-slate-800" />
                 Contatos
               </a>
+
+              <button
+                type="button"
+                onClick={() => setIsPresetModalOpen(true)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-indigo-500" />
+                Pré-preenchimento
+              </button>
               
               <div className="pt-6 pb-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Métricas</span>
@@ -222,13 +268,23 @@ export default function App() {
             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Diretório / Corporativo</h2>
             {isLoading && <RefreshCw className="w-3.5 h-3.5 text-slate-400 animate-spin" />}
           </div>
-          <button 
-            onClick={handleAddClick}
-            className="px-4 py-2 bg-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors uppercase tracking-widest flex items-center gap-1.5 shadow-sm cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Novo Contato</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsPresetModalOpen(true)}
+              className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-colors uppercase tracking-widest flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Configurar valores padrão para pré-preencher novos contatos"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="hidden sm:inline">Padrões</span>
+            </button>
+            <button 
+              onClick={handleAddClick}
+              className="px-4 py-2 bg-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors uppercase tracking-widest flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Novo Contato</span>
+            </button>
+          </div>
         </header>
 
         {/* Scrollable Workspace */}
@@ -410,6 +466,15 @@ export default function App() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveContact}
         contact={selectedContact}
+        defaultPreset={preset}
+      />
+
+      {/* Preset Modal */}
+      <PresetModal
+        isOpen={isPresetModalOpen}
+        onClose={() => setIsPresetModalOpen(false)}
+        onSave={handleSavePreset}
+        currentPreset={preset}
       />
 
       {/* Toast Notification */}
