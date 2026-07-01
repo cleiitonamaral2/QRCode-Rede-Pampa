@@ -13,9 +13,15 @@ interface PresetModalProps {
 const initialPresetState: ContactPreset = {
   phone: "",
   mobile: "",
+  fax: "",
   email: "",
   website: "",
   address: "",
+  street: "",
+  city: "",
+  state: "",
+  zip: "",
+  country: "",
   company: "",
   role: ""
 };
@@ -26,7 +32,21 @@ export default function PresetModal({ isOpen, onClose, onSave, currentPreset }: 
 
   useEffect(() => {
     if (currentPreset) {
-      setPresetData(currentPreset);
+      setPresetData({
+        phone: currentPreset.phone || "",
+        mobile: currentPreset.mobile || "",
+        fax: currentPreset.fax || "",
+        email: currentPreset.email || "",
+        website: currentPreset.website || "",
+        address: currentPreset.address || "",
+        street: currentPreset.street || "",
+        city: currentPreset.city || "",
+        state: currentPreset.state || "",
+        zip: currentPreset.zip || "",
+        country: currentPreset.country || "",
+        company: currentPreset.company || "",
+        role: currentPreset.role || ""
+      });
     } else {
       setPresetData(initialPresetState);
     }
@@ -34,7 +54,17 @@ export default function PresetModal({ isOpen, onClose, onSave, currentPreset }: 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setPresetData((prev) => ({ ...prev, [name]: value }));
+    setPresetData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (["street", "city", "state", "zip", "country"].includes(name)) {
+        const streetPart = updated.street || "";
+        const cityStatePart = [updated.city, updated.state].filter(Boolean).join(" - ");
+        const zipPart = updated.zip || "";
+        const countryPart = updated.country || "";
+        updated.address = [streetPart, cityStatePart, zipPart, countryPart].filter(Boolean).join(", ");
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -189,6 +219,25 @@ export default function PresetModal({ isOpen, onClose, onSave, currentPreset }: 
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Telefone Fax Padrão
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        name="fax"
+                        value={presetData.fax}
+                        onChange={handleChange}
+                        placeholder="Ex: (11) 3300-4401"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       E-mail Padrão (Ex: geral/contato)
                     </label>
                     <div className="relative">
@@ -206,7 +255,7 @@ export default function PresetModal({ isOpen, onClose, onSave, currentPreset }: 
                     </div>
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       Website URL Padrão
                     </label>
@@ -232,21 +281,79 @@ export default function PresetModal({ isOpen, onClose, onSave, currentPreset }: 
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3.5">
                   Endereço Físico Padrão
                 </h3>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Endereço Completo Corporativo
-                  </label>
-                  <div className="relative">
-                    <div className="absolute top-3 left-3 pointer-events-none text-stone-400">
-                      <MapPin className="w-4 h-4" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Logradouro Padrão (Rua, Avenida, Número, Bairro)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        name="street"
+                        value={presetData.street}
+                        onChange={handleChange}
+                        placeholder="Ex: Avenida Ipiranga, 1500"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                      />
                     </div>
-                    <textarea
-                      name="address"
-                      value={presetData.address}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Cidade Padrão
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={presetData.city}
                       onChange={handleChange}
-                      rows={3}
-                      placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100"
-                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                      placeholder="Ex: Porto Alegre"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Estado Padrão (UF)
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={presetData.state}
+                      onChange={handleChange}
+                      placeholder="Ex: RS"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      CEP Padrão
+                    </label>
+                    <input
+                      type="text"
+                      name="zip"
+                      value={presetData.zip}
+                      onChange={handleChange}
+                      placeholder="Ex: 90160-091"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      País Padrão
+                    </label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={presetData.country}
+                      onChange={handleChange}
+                      placeholder="Ex: Brasil"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                     />
                   </div>
                 </div>

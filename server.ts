@@ -8,9 +8,15 @@ interface Contact {
   name: string;
   phone: string;
   mobile: string;
+  fax: string;
   email: string;
   website: string;
   address: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
   company: string;
   role: string;
 }
@@ -23,9 +29,15 @@ const PRESETS_FILE = path.join(process.cwd(), "presets.json");
 interface ContactPreset {
   phone: string;
   mobile: string;
+  fax: string;
   email: string;
   website: string;
   address: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
   company: string;
   role: string;
 }
@@ -33,9 +45,15 @@ interface ContactPreset {
 const defaultPreset: ContactPreset = {
   phone: "",
   mobile: "",
+  fax: "",
   email: "",
   website: "",
   address: "",
+  street: "",
+  city: "",
+  state: "",
+  zip: "",
+  country: "",
   company: "",
   role: ""
 };
@@ -77,9 +95,15 @@ function loadContacts(): Contact[] {
           name: "Carlos Oliveira",
           phone: "(11) 3214-5555",
           mobile: "(11) 98765-4321",
+          fax: "",
           email: "carlos.oliveira@agencycorp.com.br",
           website: "https://agencycorp.com.br",
           address: "Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100",
+          street: "Av. Paulista, 1000",
+          city: "São Paulo",
+          state: "SP",
+          zip: "01310-100",
+          country: "Brasil",
           company: "AgencyCorp Digital",
           role: "Diretor de Tecnologia"
         },
@@ -88,9 +112,15 @@ function loadContacts(): Contact[] {
           name: "Juliana Mendes",
           phone: "(21) 2544-3333",
           mobile: "(21) 99888-7777",
+          fax: "",
           email: "juliana.mendes@mendesdesign.com",
           website: "https://mendesdesign.com",
           address: "Rua Visconde de Pirajá, 351 - Ipanema, Rio de Janeiro - RJ, 22410-003",
+          street: "Rua Visconde de Pirajá, 351",
+          city: "Rio de Janeiro",
+          state: "RJ",
+          zip: "22410-003",
+          country: "Brasil",
           company: "Mendes Design Studio",
           role: "Head de Design & UX"
         },
@@ -99,9 +129,15 @@ function loadContacts(): Contact[] {
           name: "Roberto Silva",
           phone: "(31) 3456-7890",
           mobile: "(31) 97654-3210",
+          fax: "",
           email: "roberto@silvaadvocacia.com.br",
           website: "https://silvaadvocacia.com.br",
           address: "Av. Afonso Pena, 1500 - Centro, Belo Horizonte - MG, 30130-005",
+          street: "Av. Afonso Pena, 1500",
+          city: "Belo Horizonte",
+          state: "MG",
+          zip: "30130-005",
+          country: "Brasil",
           company: "Silva & Associados",
           role: "Sócio Fundador"
         }
@@ -136,13 +172,19 @@ app.get("/api/presets", (req, res) => {
 
 app.post("/api/presets", (req, res) => {
   try {
-    const { phone, mobile, email, website, address, company, role } = req.body;
+    const { phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
     const updatedPreset = {
       phone: phone || "",
       mobile: mobile || "",
+      fax: fax || "",
       email: email || "",
       website: website || "",
       address: address || "",
+      street: street || "",
+      city: city || "",
+      state: state || "",
+      zip: zip || "",
+      country: country || "",
       company: company || "",
       role: role || ""
     };
@@ -162,7 +204,7 @@ app.get("/api/contacts", (req, res) => {
 // 2. Create new contact
 app.post("/api/contacts", (req, res) => {
   try {
-    const { name, phone, mobile, email, website, address, company, role } = req.body;
+    const { name, phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
     
     if (!name) {
       res.status(400).json({ error: "O nome completo é obrigatório." });
@@ -175,9 +217,15 @@ app.post("/api/contacts", (req, res) => {
       name: name || "",
       phone: phone || "",
       mobile: mobile || "",
+      fax: fax || "",
       email: email || "",
       website: website || "",
       address: address || "",
+      street: street || "",
+      city: city || "",
+      state: state || "",
+      zip: zip || "",
+      country: country || "",
       company: company || "",
       role: role || ""
     };
@@ -195,7 +243,7 @@ app.post("/api/contacts", (req, res) => {
 app.put("/api/contacts/:id", (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, mobile, email, website, address, company, role } = req.body;
+    const { name, phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
 
     if (!name) {
       res.status(400).json({ error: "O nome completo é obrigatório." });
@@ -215,9 +263,15 @@ app.put("/api/contacts/:id", (req, res) => {
       name,
       phone: phone || "",
       mobile: mobile || "",
+      fax: fax || "",
       email: email || "",
       website: website || "",
       address: address || "",
+      street: street || "",
+      city: city || "",
+      state: state || "",
+      zip: zip || "",
+      country: country || "",
       company: company || "",
       role: role || ""
     };
@@ -245,6 +299,45 @@ app.delete("/api/contacts/:id", (req, res) => {
     res.json({ message: "Contato excluído com sucesso." });
   } catch (error) {
     res.status(500).json({ error: "Erro interno ao excluir contato." });
+  }
+});
+
+// 5. Complete Backup Export (Contacts + Preset)
+app.get("/api/backup/export", (req, res) => {
+  try {
+    const contacts = loadContacts();
+    const preset = loadPreset();
+    res.json({
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      contacts,
+      preset
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao gerar arquivo de exportação." });
+  }
+});
+
+// 6. Complete Backup Import (Contacts + Preset)
+app.post("/api/backup/import", express.json({ limit: "10mb" }), (req, res) => {
+  try {
+    const { contacts, preset } = req.body;
+    
+    if (contacts && Array.isArray(contacts)) {
+      saveContacts(contacts);
+    }
+    
+    if (preset && typeof preset === "object") {
+      savePreset(preset);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: "Backup restaurado com sucesso!",
+      contactsCount: contacts ? contacts.length : 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao restaurar o backup enviado." });
   }
 });
 

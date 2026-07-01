@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Users, Search, Plus, Sparkles, Building, PhoneCall, QrCode, 
   CheckCircle2, AlertCircle, RefreshCw, Edit2, Trash2, Download,
-  Smartphone, Mail, Globe, MapPin, Briefcase
+  Smartphone, Mail, Globe, MapPin, Briefcase, Printer, Upload, Database
 } from "lucide-react";
 import { Contact, ContactFormData, ContactPreset } from "./types";
 import ContactModal from "./components/ContactModal";
@@ -18,6 +18,9 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // File input ref for backup importing
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Selection state for Bento Details Card
   const [highlightedContact, setHighlightedContact] = useState<Contact | null>(null);
@@ -85,6 +88,62 @@ export default function App() {
       showToast(err.message || "Erro de conexão com o servidor.");
       throw err;
     }
+  };
+
+  // Export full backup to file
+  const handleExportBackup = async () => {
+    try {
+      const res = await fetch("/api/backup/export");
+      if (!res.ok) throw new Error("Erro ao exportar backup.");
+      const data = await res.json();
+      
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+      const downloadAnchor = document.createElement("a");
+      const dateStr = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `vconnect_backup_${dateStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      
+      showToast("Backup baixado com sucesso!");
+    } catch (err: any) {
+      showToast(err.message || "Erro de conexão com o servidor.");
+    }
+  };
+
+  // Import full backup from file
+  const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const resultText = event.target?.result as string;
+        const parsed = JSON.parse(resultText);
+        
+        if (!parsed.contacts && !parsed.preset) {
+          throw new Error("Formato de backup inválido. Certifique-se de que é um arquivo gerado pelo sistema.");
+        }
+
+        const res = await fetch("/api/backup/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed)
+        });
+
+        if (!res.ok) throw new Error("Erro ao enviar backup para o servidor.");
+        
+        showToast("Backup restaurado com sucesso!");
+        await fetchContacts();
+        await fetchPreset();
+      } catch (err: any) {
+        showToast(err.message || "Erro ao restaurar backup.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Clear file selector
   };
 
   const showToast = (message: string) => {
@@ -243,6 +302,31 @@ export default function App() {
                   <span className="font-mono font-bold bg-slate-100 px-2 py-0.5 rounded-md text-slate-700">{contactsWithMobile}</span>
                 </div>
               </div>
+
+              <div className="pt-6 pb-2 border-t border-slate-100 mt-6">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Backup de Segurança</span>
+              </div>
+
+              <div className="space-y-1.5 px-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleExportBackup}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg font-semibold transition-all cursor-pointer"
+                  title="Exportar todos os contatos e padrões para arquivo JSON"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Exportar Dados</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-600 hover:text-emerald-600 hover:bg-slate-50 rounded-lg font-semibold transition-all cursor-pointer"
+                  title="Restaurar contatos e padrões a partir de arquivo JSON"
+                >
+                  <Upload className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Restaurar Backup</span>
+                </button>
+              </div>
             </nav>
           </div>
 
@@ -277,6 +361,29 @@ export default function App() {
               <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
               <span className="hidden sm:inline">Padrões</span>
             </button>
+            <button
+              onClick={handleExportBackup}
+              className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-colors uppercase tracking-widest flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Exportar backup completo de contatos e padrões (JSON)"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Backup</span>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-colors uppercase tracking-widest flex items-center gap-1.5 shadow-sm cursor-pointer"
+              title="Importar/Restaurar backup completo (JSON)"
+            >
+              <Upload className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Restaurar</span>
+            </button>
+            <input
+              type="file"
+              accept=".json"
+              ref={fileInputRef}
+              onChange={handleImportBackup}
+              className="hidden"
+            />
             <button 
               onClick={handleAddClick}
               className="px-4 py-2 bg-black hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors uppercase tracking-widest flex items-center gap-1.5 shadow-sm cursor-pointer"
@@ -639,6 +746,15 @@ function ActiveContactDetails({ contact }: { contact: Contact | null }) {
                 Fixo
               </span>
               <span className="font-mono text-slate-200 font-medium">{contact.phone}</span>
+            </div>
+          )}
+          {contact.fax && (
+            <div className="flex justify-between items-center">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <Printer className="w-3.5 h-3.5 text-slate-500" />
+                Fax
+              </span>
+              <span className="font-mono text-slate-200 font-medium">{contact.fax}</span>
             </div>
           )}
           {contact.email && (

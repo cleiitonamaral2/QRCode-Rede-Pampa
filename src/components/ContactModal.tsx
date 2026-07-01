@@ -15,9 +15,15 @@ const initialFormState: ContactFormData = {
   name: "",
   phone: "",
   mobile: "",
+  fax: "",
   email: "",
   website: "",
   address: "",
+  street: "",
+  city: "",
+  state: "",
+  zip: "",
+  country: "",
   company: "",
   role: ""
 };
@@ -33,9 +39,15 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
         name: contact.name,
         phone: contact.phone,
         mobile: contact.mobile,
+        fax: contact.fax || "",
         email: contact.email,
         website: contact.website,
-        address: contact.address,
+        address: contact.address || "",
+        street: contact.street || "",
+        city: contact.city || "",
+        state: contact.state || "",
+        zip: contact.zip || "",
+        country: contact.country || "",
         company: contact.company,
         role: contact.role
       });
@@ -44,9 +56,15 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
         name: "",
         phone: defaultPreset?.phone || "",
         mobile: defaultPreset?.mobile || "",
+        fax: defaultPreset?.fax || "",
         email: defaultPreset?.email || "",
         website: defaultPreset?.website || "",
         address: defaultPreset?.address || "",
+        street: defaultPreset?.street || "",
+        city: defaultPreset?.city || "",
+        state: defaultPreset?.state || "",
+        zip: defaultPreset?.zip || "",
+        country: defaultPreset?.country || "",
         company: defaultPreset?.company || "",
         role: defaultPreset?.role || ""
       });
@@ -56,7 +74,17 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (["street", "city", "state", "zip", "country"].includes(name)) {
+        const streetPart = updated.street || "";
+        const cityStatePart = [updated.city, updated.state].filter(Boolean).join(" - ");
+        const zipPart = updated.zip || "";
+        const countryPart = updated.country || "";
+        updated.address = [streetPart, cityStatePart, zipPart, countryPart].filter(Boolean).join(", ");
+      }
+      return updated;
+    });
     if (name === "name" && value.trim()) {
       setErrors((prev) => ({ ...prev, name: undefined }));
     }
@@ -235,6 +263,25 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
 
                   <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Telefone Fax
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        name="fax"
+                        value={formData.fax}
+                        onChange={handleChange}
+                        placeholder="Ex: (11) 3214-5556"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       E-mail Corporativo
                     </label>
                     <div className="relative">
@@ -252,7 +299,7 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                     </div>
                   </div>
 
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
                       Website (URL)
                     </label>
@@ -278,25 +325,84 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3.5">
                   Localização
                 </h3>
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                    Endereço Completo
-                  </label>
-                  <div className="relative">
-                    <div className="absolute top-3 left-3 pointer-events-none text-stone-400">
-                      <MapPin className="w-4 h-4" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Logradouro (Rua, Avenida, Número, Bairro)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        name="street"
+                        value={formData.street}
+                        onChange={handleChange}
+                        placeholder="Ex: Avenida Ipiranga, 1500"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                      />
                     </div>
-                    <textarea
-                      name="address"
-                      value={formData.address}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Cidade
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
                       onChange={handleChange}
-                      rows={3}
-                      placeholder="Ex: Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100"
-                      className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                      placeholder="Ex: Porto Alegre"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Estado (UF)
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      placeholder="Ex: RS"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      CEP
+                    </label>
+                    <input
+                      type="text"
+                      name="zip"
+                      value={formData.zip}
+                      onChange={handleChange}
+                      placeholder="Ex: 90160-091"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      País
+                    </label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      placeholder="Ex: Brasil"
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2"
                     />
                   </div>
                 </div>
               </div>
+
             </form>
 
             {/* Footer Actions */}
