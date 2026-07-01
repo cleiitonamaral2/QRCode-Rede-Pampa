@@ -12,7 +12,8 @@ interface ContactModalProps {
 }
 
 const initialFormState: ContactFormData = {
-  name: "",
+  firstName: "",
+  lastName: "",
   phone: "",
   mobile: "",
   fax: "",
@@ -30,13 +31,14 @@ const initialFormState: ContactFormData = {
 
 export default function ContactModal({ isOpen, onClose, onSave, contact, defaultPreset }: ContactModalProps) {
   const [formData, setFormData] = useState<ContactFormData>(initialFormState);
-  const [errors, setErrors] = useState<{ name?: string }>({});
+  const [errors, setErrors] = useState<{ firstName?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (contact) {
       setFormData({
-        name: contact.name,
+        firstName: contact.firstName || "",
+        lastName: contact.lastName || "",
         phone: contact.phone,
         mobile: contact.mobile,
         fax: contact.fax || "",
@@ -53,7 +55,8 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
       });
     } else {
       setFormData({
-        name: "",
+        firstName: "",
+        lastName: "",
         phone: defaultPreset?.phone || "",
         mobile: defaultPreset?.mobile || "",
         fax: defaultPreset?.fax || "",
@@ -85,15 +88,15 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
       }
       return updated;
     });
-    if (name === "name" && value.trim()) {
-      setErrors((prev) => ({ ...prev, name: undefined }));
+    if (name === "firstName" && value.trim()) {
+      setErrors((prev) => ({ ...prev, firstName: undefined }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      setErrors({ name: "O nome completo é obrigatório." });
+    if (!formData.firstName.trim()) {
+      setErrors({ firstName: "O nome é obrigatório." });
       return;
     }
 
@@ -155,9 +158,9 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                   Dados Principais
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
+                  <div>
                     <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                      Nome Completo <span className="text-red-500">*</span>
+                      Nome <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
@@ -165,16 +168,35 @@ export default function ContactModal({ isOpen, onClose, onSave, contact, default
                       </div>
                       <input
                         type="text"
-                        name="name"
-                        value={formData.name}
+                        name="firstName"
+                        value={formData.firstName}
                         onChange={handleChange}
-                        placeholder="Ex: Carlos de Oliveira Santos"
-                        className={`w-full pl-10 pr-4 py-2.5 bg-stone-50 border ${errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-stone-200 focus:border-stone-500 focus:ring-stone-500"} rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-0`}
+                        placeholder="Ex: Carlos"
+                        className={`w-full pl-10 pr-4 py-2.5 bg-stone-50 border ${errors.firstName ? "border-red-300 focus:border-red-500 focus:ring-red-500" : "border-stone-200 focus:border-stone-500 focus:ring-stone-500"} rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-0`}
                       />
                     </div>
-                    {errors.name && (
-                      <p className="text-xs text-red-500 mt-1 font-medium">{errors.name}</p>
+                    {errors.firstName && (
+                      <p className="text-xs text-red-500 mt-1 font-medium">{errors.firstName}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                      Sobrenome
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        placeholder="Ex: Oliveira"
+                        className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-stone-500 focus:ring-stone-500 rounded-xl text-sm transition-all focus:outline-hidden focus:ring-2 focus:ring-offset-0"
+                      />
+                    </div>
                   </div>
 
                   <div>

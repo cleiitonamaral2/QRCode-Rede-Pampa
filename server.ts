@@ -6,6 +6,8 @@ import { createServer as createViteServer } from "vite";
 interface Contact {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   mobile: string;
   fax: string;
@@ -93,6 +95,8 @@ function loadContacts(): Contact[] {
         {
           id: "1",
           name: "Carlos Oliveira",
+          firstName: "Carlos",
+          lastName: "Oliveira",
           phone: "(11) 3214-5555",
           mobile: "(11) 98765-4321",
           fax: "",
@@ -110,6 +114,8 @@ function loadContacts(): Contact[] {
         {
           id: "2",
           name: "Juliana Mendes",
+          firstName: "Juliana",
+          lastName: "Mendes",
           phone: "(21) 2544-3333",
           mobile: "(21) 99888-7777",
           fax: "",
@@ -127,6 +133,8 @@ function loadContacts(): Contact[] {
         {
           id: "3",
           name: "Roberto Silva",
+          firstName: "Roberto",
+          lastName: "Silva",
           phone: "(31) 3456-7890",
           mobile: "(31) 97654-3210",
           fax: "",
@@ -146,7 +154,21 @@ function loadContacts(): Contact[] {
       return initialContacts;
     }
     const data = fs.readFileSync(CONTACTS_FILE, "utf-8");
-    return JSON.parse(data);
+    const parsed: any[] = JSON.parse(data);
+    const normalized: Contact[] = parsed.map((c) => {
+      if (c.firstName !== undefined && c.lastName !== undefined) {
+        return c as Contact;
+      }
+      const parts = (c.name || "").trim().split(/\s+/);
+      const firstName = parts[0] || "";
+      const lastName = parts.slice(1).join(" ") || "";
+      return {
+        ...c,
+        firstName,
+        lastName
+      } as Contact;
+    });
+    return normalized;
   } catch (err) {
     console.error("Erro ao ler arquivo de contatos:", err);
     return [];
@@ -204,17 +226,23 @@ app.get("/api/contacts", (req, res) => {
 // 2. Create new contact
 app.post("/api/contacts", (req, res) => {
   try {
-    const { name, phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
+    const { firstName, lastName, phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
     
-    if (!name) {
-      res.status(400).json({ error: "O nome completo é obrigatório." });
+    const fName = (firstName || "").trim();
+    const lName = (lastName || "").trim();
+    const fullName = `${fName} ${lName}`.trim();
+
+    if (!fName) {
+      res.status(400).json({ error: "O nome é obrigatório." });
       return;
     }
 
     const contacts = loadContacts();
     const newContact: Contact = {
       id: Date.now().toString(), // Simple persistent ID generator
-      name: name || "",
+      name: fullName,
+      firstName: fName,
+      lastName: lName,
       phone: phone || "",
       mobile: mobile || "",
       fax: fax || "",
@@ -243,10 +271,14 @@ app.post("/api/contacts", (req, res) => {
 app.put("/api/contacts/:id", (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
+    const { firstName, lastName, phone, mobile, fax, email, website, address, street, city, state, zip, country, company, role } = req.body;
 
-    if (!name) {
-      res.status(400).json({ error: "O nome completo é obrigatório." });
+    const fName = (firstName || "").trim();
+    const lName = (lastName || "").trim();
+    const fullName = `${fName} ${lName}`.trim();
+
+    if (!fName) {
+      res.status(400).json({ error: "O nome é obrigatório." });
       return;
     }
 
@@ -260,7 +292,9 @@ app.put("/api/contacts/:id", (req, res) => {
 
     contacts[index] = {
       id,
-      name,
+      name: fullName,
+      firstName: fName,
+      lastName: lName,
       phone: phone || "",
       mobile: mobile || "",
       fax: fax || "",

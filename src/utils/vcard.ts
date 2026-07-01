@@ -18,8 +18,8 @@ function parseNameForVCard(fullName: string): string {
  * Generates an RFC-compliant vCard 3.0 string matching the exact format provided by the user.
  */
 export function generateVCardString(contact: Contact): string {
-  const nValue = parseNameForVCard(contact.name);
-  const fnValue = contact.name.trim();
+  const nValue = `${(contact.lastName || "").trim()};${(contact.firstName || "").trim()}`;
+  const fnValue = contact.name.trim() || `${(contact.firstName || "").trim()} ${(contact.lastName || "").trim()}`.trim();
   const orgValue = (contact.company || "").trim();
   const titleValue = (contact.role || "").trim();
   

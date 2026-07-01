@@ -1,6 +1,8 @@
 export interface Contact {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   mobile: string;
   fax: string;
@@ -17,7 +19,8 @@ export interface Contact {
 }
 
 export interface ContactFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   mobile: string;
   fax: string;
