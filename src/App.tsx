@@ -613,7 +613,14 @@ function ActiveQrPreview({ contact }: { contact: Contact | null }) {
       return;
     }
     const vCardData = generateVCardString(contact);
-    QRCode.toDataURL(vCardData, { width: 300, margin: 1 })
+    QRCode.toDataURL(vCardData, { 
+      width: 300, 
+      margin: 4,
+      color: {
+        dark: "#000000",
+        light: "#FFFFFF"
+      }
+    })
       .then(setQrUrl)
       .catch(err => console.error("Error generating bento QR preview:", err));
   }, [contact]);
@@ -625,7 +632,7 @@ function ActiveQrPreview({ contact }: { contact: Contact | null }) {
       const vCardData = generateVCardString(contact);
       const highResUrl = await QRCode.toDataURL(vCardData, {
         width: 1024,
-        margin: 2,
+        margin: 4,
         color: {
           dark: "#000000",
           light: "#FFFFFF"
